@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  server:
+    image: python:3.9-alpine
+    container_name: server_node
+    volumes:
+      - ./server:/app
+    working_dir: /app
+    command: sh -c "pip install -r requirements.txt && sleep infinity"
+    networks:
+      mitm_net:
+        ipv4_address: 10.0.0.10
+
+  victim:
+    image: python:3.9-alpine
+    container_name: victim_node
+    volumes:
+      - ./victim:/app
+    working_dir: /app
+    command: sh -c "pip install -r requirements.txt && sleep infinity"
+    networks:
+      mitm_net:
+        ipv4_address: 10.0.0.20
+
+  attacker:
+    image: kalilinux/kali-rolling
+    container_name: attacker_node
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    command: sh -c "apt-get update && apt-get install -y dsniff tcpdump iproute2 && sleep infinity"
+    networks:
+      mitm_net:
+        ipv4_address: 10.0.0.30
+
+networks:
+  mitm_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
